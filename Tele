@@ -1,0 +1,80 @@
+local player = game.Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+
+-- Tạo GUI
+local screenGui = Instance.new("ScreenGui")
+screenGui.Parent = player:WaitForChild("PlayerGui")
+
+-- Khung chính
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 250, 0, 200)
+frame.Position = UDim2.new(0.5, -125, 0.5, -100)
+frame.BackgroundColor3 = Color3.fromRGB(0, 170, 255) -- xanh biển
+frame.Parent = screenGui
+
+-- Tiêu đề
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 40)
+title.BackgroundTransparency = 1
+title.Text = "Script GAMEVUI 🐧☝"
+title.TextScaled = true
+title.TextColor3 = Color3.fromRGB(255,255,255)
+title.Parent = frame
+
+-- Biến lưu vị trí
+local savedPosition = nil
+
+-- Hàm tạo nút
+local function createButton(text, yPos, callback)
+	local button = Instance.new("TextButton")
+	button.Size = UDim2.new(0.8, 0, 0, 40)
+	button.Position = UDim2.new(0.1, 0, 0, yPos)
+	button.Text = text
+	button.TextScaled = true
+	button.BackgroundColor3 = Color3.fromRGB(255,255,255)
+	button.Parent = frame
+	
+	button.MouseButton1Click:Connect(callback)
+end
+
+-- Thông báo
+local function showNotification(msg)
+	local notif = Instance.new("TextLabel")
+	notif.Size = UDim2.new(0, 200, 0, 50)
+	notif.Position = UDim2.new(0.5, -100, 0.85, 0)
+	notif.BackgroundColor3 = Color3.fromRGB(0,0,0)
+	notif.TextColor3 = Color3.fromRGB(255,255,255)
+	notif.TextScaled = true
+	notif.Text = msg
+	notif.Parent = screenGui
+	
+	task.delay(4, function()
+		notif:Destroy()
+	end)
+end
+
+-- Nút Lưu vị trí
+createButton("Lưu vị trí", 50, function()
+	character = player.Character or player.CharacterAdded:Wait()
+	humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+	
+	savedPosition = humanoidRootPart.Position
+end)
+
+-- Nút Dịch chuyển
+createButton("Dịch chuyển", 100, function()
+	if savedPosition then
+		character = player.Character or player.CharacterAdded:Wait()
+		humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+		
+		humanoidRootPart.CFrame = CFrame.new(savedPosition)
+	else
+		showNotification("Vui lòng lưu vị trí")
+	end
+end)
+
+-- Nút Reset vị trí
+createButton("Reset vị trí", 150, function()
+	savedPosition = nil
+end)
