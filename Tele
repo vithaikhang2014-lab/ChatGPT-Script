@@ -1,80 +1,150 @@
+--// KhazHub GUI
+
 local player = game.Players.LocalPlayer
-local character = player.Character or player.CharacterAdded:Wait()
-local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+local mouse = player:GetMouse()
 
--- Tạo GUI
-local screenGui = Instance.new("ScreenGui")
-screenGui.Parent = player:WaitForChild("PlayerGui")
+-- GUI
+local screenGui = Instance.new("ScreenGui", game.CoreGui)
+screenGui.Name = "KhazHub"
 
--- Khung chính
-local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 250, 0, 200)
-frame.Position = UDim2.new(0.5, -125, 0.5, -100)
-frame.BackgroundColor3 = Color3.fromRGB(0, 170, 255) -- xanh biển
-frame.Parent = screenGui
+local frame = Instance.new("Frame", screenGui)
+frame.Size = UDim2.new(0, 220, 0, 160)
+frame.Position = UDim2.new(0.4, 0, 0.3, 0)
+frame.BorderSizePixel = 0
+frame.Active = true
+frame.BackgroundColor3 = Color3.fromRGB(255,0,0)
 
--- Tiêu đề
-local title = Instance.new("TextLabel")
-title.Size = UDim2.new(1, 0, 0, 40)
+-- Rainbow effect 🌈
+task.spawn(function()
+    local hue = 0
+    while true do
+        frame.BackgroundColor3 = Color3.fromHSV(hue,1,1)
+        hue = hue + 0.01
+        if hue > 1 then hue = 0 end
+        task.wait(0.03)
+    end
+end)
+
+-- Title
+local title = Instance.new("TextLabel", frame)
+title.Size = UDim2.new(1,0,0,30)
 title.BackgroundTransparency = 1
-title.Text = "Script GAMEVUI 🐧☝"
+title.Text = "KhazHub"
 title.TextScaled = true
 title.TextColor3 = Color3.fromRGB(255,255,255)
-title.Parent = frame
+title.Font = Enum.Font.GothamBold
 
--- Biến lưu vị trí
-local savedPosition = nil
+-- Info label
+local info = Instance.new("TextLabel", frame)
+info.Position = UDim2.new(0,0,0,30)
+info.Size = UDim2.new(1,0,0,20)
+info.BackgroundTransparency = 1
+info.Text = "Đã lưu: 0"
+info.TextColor3 = Color3.fromRGB(255,255,255)
+info.TextScaled = true
 
--- Hàm tạo nút
-local function createButton(text, yPos, callback)
-	local button = Instance.new("TextButton")
-	button.Size = UDim2.new(0.8, 0, 0, 40)
-	button.Position = UDim2.new(0.1, 0, 0, yPos)
-	button.Text = text
-	button.TextScaled = true
-	button.BackgroundColor3 = Color3.fromRGB(255,255,255)
-	button.Parent = frame
-	
-	button.MouseButton1Click:Connect(callback)
+-- Notify label
+local notify = Instance.new("TextLabel", screenGui)
+notify.Size = UDim2.new(0,200,0,40)
+notify.Position = UDim2.new(0.4,0,0.1,0)
+notify.BackgroundColor3 = Color3.fromRGB(0,0,0)
+notify.TextColor3 = Color3.fromRGB(255,255,255)
+notify.Visible = false
+notify.TextScaled = true
+
+local function showNotify(text)
+    notify.Text = text
+    notify.Visible = true
+    task.wait(2)
+    notify.Visible = false
 end
 
--- Thông báo
-local function showNotification(msg)
-	local notif = Instance.new("TextLabel")
-	notif.Size = UDim2.new(0, 200, 0, 50)
-	notif.Position = UDim2.new(0.5, -100, 0.85, 0)
-	notif.BackgroundColor3 = Color3.fromRGB(0,0,0)
-	notif.TextColor3 = Color3.fromRGB(255,255,255)
-	notif.TextScaled = true
-	notif.Text = msg
-	notif.Parent = screenGui
-	
-	task.delay(4, function()
-		notif:Destroy()
-	end)
+-- Buttons
+local function createButton(text, y)
+    local btn = Instance.new("TextButton", frame)
+    btn.Size = UDim2.new(0.9,0,0,25)
+    btn.Position = UDim2.new(0.05,0,0,y)
+    btn.Text = text
+    btn.TextScaled = true
+    btn.BackgroundColor3 = Color3.fromRGB(0,0,0)
+    btn.TextColor3 = Color3.fromRGB(255,255,255)
+    return btn
 end
 
--- Nút Lưu vị trí
-createButton("Lưu vị trí", 50, function()
-	character = player.Character or player.CharacterAdded:Wait()
-	humanoidRootPart = character:WaitForChild("HumanoidRootPart")
-	
-	savedPosition = humanoidRootPart.Position
+local saveBtn = createButton("Lưu vị trí", 55)
+local tpBtn = createButton("Dịch chuyển", 85)
+local resetBtn = createButton("RESET", 115)
+
+-- Data
+local positions = {}
+local currentIndex = 1
+
+-- Save position
+saveBtn.MouseButton1Click:Connect(function()
+    local char = player.Character
+    if char and char:FindFirstChild("HumanoidRootPart") then
+        table.insert(positions, char.HumanoidRootPart.Position)
+        info.Text = "Đã lưu: "..#positions
+    end
 end)
 
--- Nút Dịch chuyển
-createButton("Dịch chuyển", 100, function()
-	if savedPosition then
-		character = player.Character or player.CharacterAdded:Wait()
-		humanoidRootPart = character:WaitForChild("HumanoidRootPart")
-		
-		humanoidRootPart.CFrame = CFrame.new(savedPosition)
-	else
-		showNotification("Vui lòng lưu vị trí")
-	end
+-- Teleport
+tpBtn.MouseButton1Click:Connect(function()
+    if #positions == 0 then
+        showNotify("Vui lòng lưu vị trí!")
+        return
+    end
+
+    local char = player.Character
+    if char and char:FindFirstChild("HumanoidRootPart") then
+        char.HumanoidRootPart.CFrame = CFrame.new(positions[currentIndex])
+        currentIndex = currentIndex + 1
+        if currentIndex > #positions then
+            currentIndex = 1
+        end
+    end
 end)
 
--- Nút Reset vị trí
-createButton("Reset vị trí", 150, function()
-	savedPosition = nil
+-- Reset
+resetBtn.MouseButton1Click:Connect(function()
+    positions = {}
+    currentIndex = 1
+    info.Text = "Đã lưu: 0"
+end)
+
+-- Draggable + nút tròn trắng ⚪
+local dragBtn = Instance.new("TextButton", frame)
+dragBtn.Size = UDim2.new(0,20,0,20)
+dragBtn.Position = UDim2.new(1,-22,0,2)
+dragBtn.Text = "+"
+dragBtn.BackgroundColor3 = Color3.fromRGB(255,255,255)
+dragBtn.TextColor3 = Color3.fromRGB(0,0,0)
+
+local dragging = false
+local dragInput, mousePos, framePos
+
+dragBtn.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        mousePos = input.Position
+        framePos = frame.Position
+    end
+end)
+
+dragBtn.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = false
+    end
+end)
+
+game:GetService("UserInputService").InputChanged:Connect(function(input)
+    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+        local delta = input.Position - mousePos
+        frame.Position = UDim2.new(
+            framePos.X.Scale,
+            framePos.X.Offset + delta.X,
+            framePos.Y.Scale,
+            framePos.Y.Offset + delta.Y
+        )
+    end
 end)
